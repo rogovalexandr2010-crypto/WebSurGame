@@ -1,10 +1,10 @@
-// game.js Update
+// game.js Update 2
 const RUDE_LIST = [
-{id:"stone",name:"Камень",value:1,rate:0.5},        // очень часто
-{id:"coal",name:"Уголь",value:3,rate:0.3},         // часто
-{id:"iron",name:"Железо",value:8,rate:0.15},       // не очень редкое
-{id:"gold",name:"Золото",value:15,rate:0.05},      // очень редкое
-{id:"diamond",name:"Алмаз",value:40,rate:0.01}     // самое редкое
+{id:"stone",name:"Камень",value:1,rate:0.5},
+{id:"coal",name:"Уголь",value:3,rate:0.3},
+{id:"iron",name:"Железо",value:8,rate:0.15},
+{id:"gold",name:"Золото",value:15,rate:0.05},
+{id:"diamond",name:"Алмаз",value:40,rate:0.01}
 ];
 
 const MONSTERS = [
@@ -28,7 +28,8 @@ let state = {
   maxEnergy:20,
   mining:false,
   timer:0,
-  health:100
+  health:100,
+  attack:10
 };
 
 function saveState(){localStorage.setItem('minegame_adv',JSON.stringify(state));document.getElementById('saveState').innerText='Автоматически (сохранено)';}
@@ -43,37 +44,55 @@ function updateUI(){
 }
 function addLog(msg){const log=document.getElementById('eventLog');log.innerHTML=msg+'<br>'+log.innerHTML;}
 function chooseOre(){const r=Math.random(); let sum=0; for(const ore of RUDE_LIST){sum+=ore.rate;if(r<=sum) return ore;} return RUDE_LIST[0];}
+
 function encounterMonster(monster){
   let mHealth = monster.health;
-  let choice = prompt(`Встретился монстр: ${monster.name}! Здоровье монстра: ${mHealth}. Ваше здоровье: ${state.health}. Выберите: 1) Напасть 2) Убежать`);
+  let DM = monster.damage;
+  let DP = state.attack;
+  let choice = prompt(`Встретился монстр: ${monster.name}! HP монстра: ${mHealth}, Ваше HP: ${state.health}. Выберите: 1) Напасть 2) Убежать`);
   if(choice==='1'){
-    while(mHealth>0 && state.health>0){
-      mHealth-=5;
-      state.health-=monster.damage;
+    let ratioPlayer = state.health / DM;
+    let ratioMonster = mHealth / DP;
+    if(ratioMonster < ratioPlayer){
+      // победа игрока
+      let damageTaken = Math.ceil(mHealth/DP*DM);
+      state.health -= damageTaken;
+      if(state.health < 0) state.health = 0;
+      addLog(`Вы победили ${monster.name}, получили урон ${damageTaken}`);
+    } else {
+      // поражение игрока
+      state.health = 0;
+      addLog(`Вы проиграли бой с ${monster.name} и погибли!`);
+      alert('Вы умерли! Нажмите OK чтобы начать сначала.');
+      // сброс состояния
+      state = {balance:0,inventory:{},pickaxeIndex:0,energy:20,maxEnergy:20,mining:false,timer:0,health:100,attack:10};
     }
-    if(state.health<=0){addLog('Вы проиграли бой!'); state.health=0;}
-    else addLog(`Вы победили ${monster.name}!`); 
-  }else{addLog(`Вы убежали от ${monster.name}!`);}
+  } else {
+    addLog(`Вы убежали от ${monster.name}!`);
+  }
 }
+
 function tickMining(){
   if(state.timer>0){state.timer--;document.getElementById('timer').innerText='Время копки: '+state.timer; return;}
   state.mining=false;document.getElementById('timer').innerText='Время копки: 0';
-  // начисляем ресурсы
   const pick=PICKAXE_LIST[state.pickaxeIndex];
   const amount=Math.floor(pick.power+Math.random()*2);
   const ore=chooseOre();
   state.inventory[ore.id]=(state.inventory[ore.id]||0)+amount;
   addLog('Добыто '+amount+'× '+ore.name);
-  // шанс монстра
   if(Math.random()<0.1){
     const monster = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
     encounterMonster(monster);
   }
   saveState(); updateUI();
 }
+
 function dig(){if(state.mining){addLog('Копка уже идет!'); return;}
 if(state.energy<1){addLog('Недостаточно энергии для копки'); return;}
 state.energy--; state.mining=true; state.timer=Math.max(3,5-PICKAXE_LIST[state.pickaxeIndex].power); document.getElementById('timer').innerText='Время копки: '+state.timer; addLog('Начата копка...');}
+
 function sell(){let total=0;for(const r of RUDE_LIST){const cnt=state.inventory[r.id]||0; total+=cnt*r.value; state.inventory[r.id]=0;} if(total>0){state.balance+=total; addLog('Продано на '+total+'💰');} else addLog('Нечего продавать.'); saveState(); updateUI();}
+
 function init(){loadState(); RUDE_LIST.forEach(r=>{if(!state.inventory[r.id]) state.inventory[r.id]=0;}); document.getElementById('digBtn').addEventListener('click',dig); document.getElementById('sellBtn').addEventListener('click',sell); setInterval(()=>{if(state.mining)tickMining();},1000); setInterval(()=>{if(state.energy<state.maxEnergy){state.energy++; updateUI();}},60000); updateUI(); addLog('Игра загружена.'); saveState();}
+
 window.addEventListener('load',init);
