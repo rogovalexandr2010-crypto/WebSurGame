@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MineGame Advanced Update 2</title>
+<title>MineGame Advanced Update 3</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="container">
 <header>
-<h1>MineGame Advanced ⛏ (Update 2)</h1>
+<h1>MineGame Advanced ⛏ (Update 3)</h1>
 <div class="status">
 <div id="balance">Монет: 0</div>
 <div id="energy">Энергия: 20/20</div>
@@ -22,11 +22,17 @@
 <button id="digBtn" class="big">Копать вниз ⛏</button>
 <button id="sellBtn" class="big">Продать ресурсы 💰</button>
 <div id="timer">Время копки: 0</div>
-<div id="eventLog"></div>
+<div id="eventLog" class="log"></div>
 </div>
 <div class="inventory">
 <h3>Инвентарь</h3>
 <div id="inventoryList"></div>
+</div>
+<div id="combat" class="hud" style="display:none;">
+<h3>Монстр встречен!</h3>
+<div id="monsterInfo"></div>
+<button id="attackBtn" class="big">Напасть ⚔️</button>
+<button id="runBtn" class="big">Убежать 🏃</button>
 </div>
 </main>
 <footer>

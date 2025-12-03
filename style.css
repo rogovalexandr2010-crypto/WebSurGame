@@ -9,3 +9,5 @@ header h1{margin:0;font-size:22px;}
 .inventory{background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;margin-top:10px;}
 #inventoryList>div{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,0.02);}
 .log{margin-top:16px;background:rgba(255,255,255,0.02);padding:12px;border-radius:8px;min-height:80px;color:#94a3b8;font-size:13px;overflow:auto;}
+#combat{margin-top:10px;}
+#monsterInfo{margin-bottom:10px;}

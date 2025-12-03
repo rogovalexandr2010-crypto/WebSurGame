@@ -1,4 +1,4 @@
-// game.js Update 2
+// game.js Update 3
 const RUDE_LIST = [
 {id:"stone",name:"Камень",value:1,rate:0.5},
 {id:"coal",name:"Уголь",value:3,rate:0.3},
@@ -32,6 +32,8 @@ let state = {
   attack:10
 };
 
+let currentMonster = null;
+
 function saveState(){localStorage.setItem('minegame_adv',JSON.stringify(state));document.getElementById('saveState').innerText='Автоматически (сохранено)';}
 function loadState(){const s=localStorage.getItem('minegame_adv');if(s) state=JSON.parse(s);}
 function updateUI(){
@@ -42,33 +44,43 @@ function updateUI(){
   const inv=document.getElementById('inventoryList'); inv.innerHTML='';
   RUDE_LIST.forEach(r=>{const cnt=state.inventory[r.id]||0; const el=document.createElement('div'); el.innerText=r.name+' × '+cnt; inv.appendChild(el);});
 }
+
 function addLog(msg){const log=document.getElementById('eventLog');log.innerHTML=msg+'<br>'+log.innerHTML;}
+
 function chooseOre(){const r=Math.random(); let sum=0; for(const ore of RUDE_LIST){sum+=ore.rate;if(r<=sum) return ore;} return RUDE_LIST[0];}
 
-function encounterMonster(monster){
-  let mHealth = monster.health;
-  let DM = monster.damage;
-  let DP = state.attack;
-  let choice = prompt(`Встретился монстр: ${monster.name}! HP монстра: ${mHealth}, Ваше HP: ${state.health}. Выберите: 1) Напасть 2) Убежать`);
-  if(choice==='1'){
-    let ratioPlayer = state.health / DM;
-    let ratioMonster = mHealth / DP;
-    if(ratioMonster < ratioPlayer){
-      // победа игрока
-      let damageTaken = Math.ceil(mHealth/DP*DM);
-      state.health -= damageTaken;
-      if(state.health < 0) state.health = 0;
-      addLog(`Вы победили ${monster.name}, получили урон ${damageTaken}`);
-    } else {
-      // поражение игрока
-      state.health = 0;
-      addLog(`Вы проиграли бой с ${monster.name} и погибли!`);
-      alert('Вы умерли! Нажмите OK чтобы начать сначала.');
-      // сброс состояния
-      state = {balance:0,inventory:{},pickaxeIndex:0,energy:20,maxEnergy:20,mining:false,timer:0,health:100,attack:10};
-    }
+function startCombat(monster){
+  currentMonster = {...monster};
+  document.getElementById('combat').style.display='block';
+  document.getElementById('monsterInfo').innerText = `Монстр: ${currentMonster.name}, HP: ${currentMonster.health}`;
+}
+
+function attackMonster(){
+  if(!currentMonster) return;
+  let ratioPlayer = state.health / currentMonster.damage;
+  let ratioMonster = currentMonster.health / state.attack;
+  if(ratioMonster < ratioPlayer){
+    let damageTaken = Math.ceil(currentMonster.health/state.attack*currentMonster.damage);
+    state.health -= damageTaken;
+    if(state.health < 0) state.health = 0;
+    addLog(`Вы победили ${currentMonster.name}, получили урон ${damageTaken}`);
   } else {
-    addLog(`Вы убежали от ${monster.name}!`);
+    state.health = 0;
+    addLog(`Вы проиграли бой с ${currentMonster.name} и погибли!`);
+    alert('Вы умерли! Игра начинается заново.');
+    state = {balance:0,inventory:{},pickaxeIndex:0,energy:20,maxEnergy:20,mining:false,timer:0,health:100,attack:10};
+  }
+  currentMonster = null;
+  document.getElementById('combat').style.display='none';
+  updateUI();
+  saveState();
+}
+
+function runFromMonster(){
+  if(currentMonster){
+    addLog(`Вы убежали от ${currentMonster.name}!`);
+    currentMonster = null;
+    document.getElementById('combat').style.display='none';
   }
 }
 
@@ -82,7 +94,7 @@ function tickMining(){
   addLog('Добыто '+amount+'× '+ore.name);
   if(Math.random()<0.1){
     const monster = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
-    encounterMonster(monster);
+    startCombat(monster);
   }
   saveState(); updateUI();
 }
@@ -93,6 +105,16 @@ state.energy--; state.mining=true; state.timer=Math.max(3,5-PICKAXE_LIST[state.p
 
 function sell(){let total=0;for(const r of RUDE_LIST){const cnt=state.inventory[r.id]||0; total+=cnt*r.value; state.inventory[r.id]=0;} if(total>0){state.balance+=total; addLog('Продано на '+total+'💰');} else addLog('Нечего продавать.'); saveState(); updateUI();}
 
-function init(){loadState(); RUDE_LIST.forEach(r=>{if(!state.inventory[r.id]) state.inventory[r.id]=0;}); document.getElementById('digBtn').addEventListener('click',dig); document.getElementById('sellBtn').addEventListener('click',sell); setInterval(()=>{if(state.mining)tickMining();},1000); setInterval(()=>{if(state.energy<state.maxEnergy){state.energy++; updateUI();}},60000); updateUI(); addLog('Игра загружена.'); saveState();}
+function init(){
+  loadState(); RUDE_LIST.forEach(r=>{if(!state.inventory[r.id]) state.inventory[r.id]=0;});
+  document.getElementById('digBtn').addEventListener('click',dig);
+  document.getElementById('sellBtn').addEventListener('click',sell);
+  document.getElementById('attackBtn').addEventListener('click',attackMonster);
+  document.getElementById('runBtn').addEventListener('click',runFromMonster);
+  setInterval(()=>{if(state.mining)tickMining();},1000);
+  setInterval(()=>{if(state.energy<state.maxEnergy){state.energy++; updateUI();}},60000);
+  updateUI(); addLog('Игра загружена.');
+  saveState();
+}
 
 window.addEventListener('load',init);
