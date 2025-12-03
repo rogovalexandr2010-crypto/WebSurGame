@@ -1,4 +1,4 @@
-// game.js Update 3
+// game.js Update 4
 const RUDE_LIST = [
 {id:"stone",name:"Камень",value:1,rate:0.5},
 {id:"coal",name:"Уголь",value:3,rate:0.3},
@@ -92,7 +92,8 @@ function tickMining(){
   const ore=chooseOre();
   state.inventory[ore.id]=(state.inventory[ore.id]||0)+amount;
   addLog('Добыто '+amount+'× '+ore.name);
-  if(Math.random()<0.1){
+  // увеличенный шанс появления монстра 20%
+  if(Math.random()<0.2){
     const monster = MONSTERS[Math.floor(Math.random()*MONSTERS.length)];
     startCombat(monster);
   }
